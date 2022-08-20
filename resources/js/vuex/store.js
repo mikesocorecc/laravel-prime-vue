@@ -3,11 +3,11 @@ import axios  from 'axios';
  
 export default createStore({
   state: {
-    user: null 
+    user: 'vacio' 
   },
   mutations: {
-      SET_USER_DATA (state, userData) {
-        console.log(userData.token); 
+      SET_USER_DATA (state, userData) { 
+        console.log(userData);
         localStorage.setItem('user', JSON.stringify(userData))
         axios.defaults.headers.common['Authorization'] = `Bearer ${
           userData.token
@@ -22,16 +22,14 @@ export default createStore({
     register ({ commit }, credentials) {
       return axios
         .post('http://localhost:3000/register', credentials)
-        .then(({ data }) => {
-          // eslint-disable-next-line no-undef
-          console.log('user data is', data)
+        .then(({ data }) => { 
           commit('SET_USER_DATA', data)
         })
     },
     async login ({ commit }, credentials) {
-        const { data } = await axios
-          .post('http://laravel-prime-vue.test/api/login', credentials);
+        const { data } = await axios.post('http://laravel-prime-vue.test/api/login', credentials);
         commit('SET_USER_DATA', data);
+        return data;
     },
     logout ({ commit }) {
       commit('LOGOUT')
@@ -40,6 +38,7 @@ export default createStore({
   // Getters para retornar informacion
   getters: {
     loggedIn (state) {
+      console.log(state);
       return !!state.user
     }
   },

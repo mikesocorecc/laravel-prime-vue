@@ -1,96 +1,61 @@
-<template  >
-  <div>
-    <section class="section">
-      <div class="container mt-5">
-        <div class="row">
-          <div class="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3 col-lg-6 offset-lg-3 col-xl-4 offset-xl-4">
-            <div class="login-brand">
-              <!-- <img src="assets/img/stisla-fill.svg" alt="logo" width="100" class="shadow-light rounded-circle"> -->
-              imagen
-            </div>
-
-            <div class="card card-primary">
-              <div class="card-header">
-                <h4>Login</h4>
-              </div>
-
-              <div class="card-body">
-                <form   @submit.prevent="login" class="needs-validation" novalidate="">
-                  <div class="form-group">
-                    <label for="email">Email</label>
-                    <input  type="email" v-model="email" class="form-control" tabindex="1" required autofocus>
-                    <div class="invalid-feedback">
-                      Please fill in your email
-                    </div>
-                  </div>
-
-                  <div class="form-group">
-                    <div class="d-block">
-                      <label for="password" class="control-label">Password</label>
-                      <div class="float-right">
-                        <a href="#" class="text-small">
-                          Forgot Password?
-                        </a>
-                      </div>
-                    </div>
-                    <input  type="password" v-model="password" class="form-control" name="password"
-                      tabindex="2" required>
-                    <div class="invalid-feedback">
-                      please fill in your password
-                    </div>
-                  </div>
-
-                  <div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                      <input type="checkbox" name="remember" class="custom-control-input" tabindex="3" id="remember-me">
-                      <label class="custom-control-label" for="remember-me">Remember Me</label>
-                    </div>
-                  </div>
-
-                  <div class="form-group">
-                    <button type="submit" class="btn btn-primary btn-lg btn-block" tabindex="4">
-                      Login
-                    </button>
-                    <p>{{ error }}</p>
-                  </div>
-                </form>
-              </div>
-            </div>
-            <div class="mt-5 text-muted text-center">
-              Don't have an account? <a href="#">Create One</a>
-            </div>
-            <div class="simple-footer">
-              Copyright &copy; Stisla 2018
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
+<template>
+  <form @submit.prevent="login" class="flex flex-col container mx-auto mt-20">
+    <input class="border-2 mb-5 focus:outline-none " type="email" v-model="email" />
+    <input class="border-2 mb-3 focus:outline-none " type="password" v-model="password" />
+    <button class="border-2 mb-3 bg-primary text-white border-primary rounded-lg" type="submit">Login</button>
+  </form>
 </template>
+
 <script>
+import { AbilityBuilder, Ability } from '@casl/ability';
+import { ABILITY_TOKEN } from '@casl/vue';
+import useJwt from '../../auth/jwt/useJwt' //'@/auth/jwt/useJwt'
+import ability from '../../libs/acl/ability'
+import { getHomeRouteForLoggedInUser } from '../../auth/utils' //@/auth/utils
 export default {
-  data() {
-    return {
-      email: '',
-      password: 'password',
-      error: null
-    }
+  name: 'LoginForm',
+  inject: {
+    $ability: { from: ABILITY_TOKEN }
+  },
+  data: () => ({
+    email: 'nLKpLYi1pn@gmail.com',
+    password: 'password',
+  }),
+  created() {
+    const { can, rules } = new AbilityBuilder(Ability);
+      
+     let user = 'admin';
+     if (user === 'admin') {
+        can('manage', 'undefined');
+      } else {
+        can('read', 'undefined');
+      }
+    this.$ability.update(ability);
+   
   },
   methods: {
-     login() {
-      this.$store
-        .dispatch('login', {
-          email: this.email,
-          password: this.password
-        })
-        .then(() => { this.$router.push({ name: 'dashboard' }) })
-        .catch(err => {
-          this.error = err.response.data.error
-        })
-    }
+    // login() {
+    //   const { email, password } = this;
+    //   const params = { method: 'POST', body: JSON.stringify({ email, password }) };
+
+    //   return fetch('http://laravel-prime-vue.test/api/login', params)
+    //     .then(response => response.json())
+    //     .then(({ user }) => this.updateAbility(user));
+        
+    // },
+    async login () {
+        const { email, password } = this;
+        console.log(password);
+        const credentials = { email, password };
+        const { data } = await axios.post('http://laravel-prime-vue.test/api/login', credentials);
+        useJwt.setToken(data.accessToken)
+        useJwt.setRefreshToken(data.refreshToken)
+        localStorage.setItem('userData', JSON.stringify(data))  
+        this.$ability.update(data.userData.ability)  
+        this.$router.replace({path : getHomeRouteForLoggedInUser(data.userData.role) } ).then(() => {
+              
+        }) 
+    }, 
   }
-}
+};
 </script>
-<style  >
-</style>
